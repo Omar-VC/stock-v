@@ -4,13 +4,17 @@ import {
   updateProduct,
 } from "../../../services/productService"
 
+type Category = "lenceria" | "ropa_interior" | "perfume"
+
 export default function ProductForm({
   onCreated,
   editingProduct,
   setEditingProduct,
 }: any) {
+
   const [name, setName] = useState("")
   const [variant, setVariant] = useState("")
+  const [category, setCategory] = useState<Category>("lenceria")
   const [costPrice, setCostPrice] = useState(0)
   const [salePrice, setSalePrice] = useState(0)
   const [stock, setStock] = useState(0)
@@ -18,21 +22,23 @@ export default function ProductForm({
 
   useEffect(() => {
     if (editingProduct) {
-      setName(editingProduct.name)
-      setVariant(editingProduct.variant)
-      setCostPrice(editingProduct.costPrice)
-      setSalePrice(editingProduct.salePrice)
-      setStock(editingProduct.stock)
-      setImageUrl(editingProduct.imageUrl)
+      setName(editingProduct.name || "")
+      setVariant(editingProduct.variant || "")
+      setCategory(editingProduct.category || "lenceria")
+      setCostPrice(editingProduct.costPrice || 0)
+      setSalePrice(editingProduct.salePrice || 0)
+      setStock(editingProduct.stock || 0)
+      setImageUrl(editingProduct.imageUrl || "")
     }
   }, [editingProduct])
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const data = {
       name,
       variant,
+      category,
       costPrice: Number(costPrice),
       salePrice: Number(salePrice),
       stock: Number(stock),
@@ -51,6 +57,7 @@ export default function ProductForm({
 
     setName("")
     setVariant("")
+    setCategory("lenceria")
     setCostPrice(0)
     setSalePrice(0)
     setStock(0)
@@ -71,7 +78,6 @@ export default function ProductForm({
         <label className="text-sm text-gray-600">Nombre del producto</label>
         <input
           className="border p-2 w-full mt-1"
-          placeholder="Ej: Medias"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -82,19 +88,30 @@ export default function ProductForm({
         <label className="text-sm text-gray-600">Variante / Detalle</label>
         <input
           className="border p-2 w-full mt-1"
-          placeholder="Ej: Negro T:90"
           value={variant}
           onChange={(e) => setVariant(e.target.value)}
         />
+      </div>
+
+      {/* Categoría */}
+      <div>
+        <label className="text-sm text-gray-600">Categoría</label>
+        <select
+          className="border p-2 w-full mt-1"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as Category)}
+        >
+          <option value="lenceria">Lencería</option>
+          <option value="ropa_interior">Ropa interior</option>
+          <option value="perfume">Perfume</option>
+        </select>
       </div>
 
       {/* Precios */}
       <div className="grid grid-cols-2 gap-3">
 
         <div>
-          <label className="text-sm text-gray-600">
-            Precio de compra
-          </label>
+          <label className="text-sm text-gray-600">Precio compra</label>
           <input
             type="number"
             className="border p-2 w-full mt-1"
@@ -104,9 +121,7 @@ export default function ProductForm({
         </div>
 
         <div>
-          <label className="text-sm text-gray-600">
-            Precio de venta
-          </label>
+          <label className="text-sm text-gray-600">Precio venta</label>
           <input
             type="number"
             className="border p-2 w-full mt-1"
@@ -119,7 +134,7 @@ export default function ProductForm({
 
       {/* Stock */}
       <div>
-        <label className="text-sm text-gray-600">Cantidad en stock</label>
+        <label className="text-sm text-gray-600">Stock</label>
         <input
           type="number"
           className="border p-2 w-full mt-1"
@@ -130,10 +145,9 @@ export default function ProductForm({
 
       {/* Imagen */}
       <div>
-        <label className="text-sm text-gray-600">URL de la imagen</label>
+        <label className="text-sm text-gray-600">Imagen URL</label>
         <input
           className="border p-2 w-full mt-1"
-          placeholder="https://..."
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
         />
@@ -143,7 +157,7 @@ export default function ProductForm({
       {imageUrl && (
         <img
           src={imageUrl}
-          className="h-40 object-cover w-full rounded border"
+          className="h-40 w-full object-cover rounded"
         />
       )}
 

@@ -21,10 +21,12 @@ export const getProducts = async (): Promise<Product[]> => {
       id: d.id,
       name: data.name ?? "",
       variant: data.variant ?? "",
+      category: data.category ?? "lenceria",
       stock: Number(data.stock ?? 0),
       salePrice: Number(data.salePrice ?? data.price ?? 0),
       costPrice: Number(data.costPrice ?? 0),
       imageUrl: data.imageUrl ?? "",
+      createdAt: data.createdAt ?? 0,
     }
   })
 }
@@ -34,9 +36,11 @@ export const createProduct = async (
 ) => {
   await addDoc(ref, {
     ...data,
+    category: data.category ?? "lenceria",
     stock: Number(data.stock),
     salePrice: Number(data.salePrice),
     costPrice: Number(data.costPrice),
+    createdAt: data.createdAt ?? Date.now(),
   })
 }
 
@@ -50,8 +54,11 @@ export const updateProduct = async (
 ) => {
   await updateDoc(doc(db, "products", id), {
     ...data,
-    stock: Number(data.stock ?? 0),
-    salePrice: Number(data.salePrice ?? 0),
-    costPrice: Number(data.costPrice ?? 0),
+    category: data.category,
+    stock: data.stock !== undefined ? Number(data.stock) : undefined,
+    salePrice:
+      data.salePrice !== undefined ? Number(data.salePrice) : undefined,
+    costPrice:
+      data.costPrice !== undefined ? Number(data.costPrice) : undefined,
   })
 }

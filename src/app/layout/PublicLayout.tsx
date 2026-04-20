@@ -2,9 +2,16 @@ import { Outlet, Link } from "react-router-dom"
 
 export default function PublicLayout() {
   return (
-    <div className="min-h-screen bg-light">
+    <div className="min-h-screen flex flex-col"
+      style={{
+        background: "linear-gradient(135deg, #ffb2f1, #feebb9, #fedcc7)"
+      }}
+    >
 
-      <header className="bg-dark text-white p-4 flex justify-between items-center">
+      <header
+        style={{ background: "#2e1f21" }}
+        className="text-white p-4 flex justify-between items-center"
+      >
         <h1 className="text-xl font-bold">Santa Julia</h1>
 
         <Link
@@ -15,9 +22,10 @@ export default function PublicLayout() {
         </Link>
       </header>
 
-      <main className="p-6">
+      <main className="p-6 max-w-6xl mx-auto flex-1">
         <Outlet />
       </main>
+
     </div>
   )
 }
