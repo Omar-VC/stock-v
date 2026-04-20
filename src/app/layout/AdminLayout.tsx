@@ -1,38 +1,44 @@
-import { Outlet, Link, useNavigate } from "react-router-dom"
-import { signOut } from "firebase/auth"
-import { auth } from "../../services/firebase"
+import { Outlet } from "react-router-dom"
+import { useState } from "react"
+import Sidebar from "../../components/layout/Sidebar"
 
 export default function AdminLayout() {
-  const navigate = useNavigate()
-
-  const handleLogout = async () => {
-    await signOut(auth)
-    navigate("/login")
-  }
+  const [open, setOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100">
 
-      <header className="bg-dark text-white p-4 flex justify-between items-center">
-        <h1 className="font-bold">Panel Santa Julia</h1>
+      {/* OVERLAY MOBILE */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/40 md:hidden z-40"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
-        <nav className="flex gap-4 text-sm items-center">
-          <Link to="/admin/dashboard">Dashboard</Link>
-          <Link to="/admin/products">Productos</Link>
-          <Link to="/admin/sales">Ventas</Link>
+      {/* SIDEBAR */}
+      <Sidebar open={open} setOpen={setOpen} />
 
+      {/* CONTENIDO */}
+      <div className="flex-1 flex flex-col">
+
+        {/* TOPBAR */}
+        <header className="bg-dark text-white p-4 flex items-center gap-4">
           <button
-            onClick={handleLogout}
-            className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+            className="md:hidden text-xl"
+            onClick={() => setOpen(!open)}
           >
-            Salir
+            ☰
           </button>
-        </nav>
-      </header>
 
-      <main className="p-6">
-        <Outlet />
-      </main>
+          <h1 className="font-bold">Panel de Administración</h1>
+        </header>
+
+        <main className="p-6">
+          <Outlet />
+        </main>
+
+      </div>
     </div>
   )
 }
