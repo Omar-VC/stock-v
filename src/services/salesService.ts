@@ -5,16 +5,20 @@ import {
   doc,
   updateDoc,
   getDoc,
+  getDocs,
+  deleteDoc,
   Timestamp,
+  query,
+  orderBy,
 } from "firebase/firestore"
 
 const salesRef = collection(db, "sales")
 
+// CREAR VENTA
 export async function createSale(
   productId: string,
   quantity: number
 ) {
-  // 1. traer producto
   const productRef = doc(db, "products", productId)
   const productSnap = await getDoc(productRef)
 
@@ -24,25 +28,53 @@ export async function createSale(
 
   const product = productSnap.data()
 
-  // 2. validar stock
-  if (product.stock < quantity) {
+  const stock = Number(product.stock ?? 0)
+  const price = Number(product.salePrice ?? product.price ?? 0)
+  const qty = Number(quantity)
+
+  if (stock < qty) {
     throw new Error("Stock insuficiente")
   }
 
-  // 3. calcular total
-  const total = product.price * quantity
+  const total = price * qty
 
-  // 4. guardar venta
   await addDoc(salesRef, {
     productId,
     productName: product.name,
-    quantity,
+    quantity: qty,
+    salePrice: price,
     total,
     createdAt: Timestamp.now(),
   })
 
-  // 5. descontar stock
   await updateDoc(productRef, {
-    stock: product.stock - quantity,
+    stock: stock - qty,
   })
+}
+
+// OBTENER VENTAS (ordenadas por fecha)
+export async function getSales() {
+  const q = query(salesRef, orderBy("createdAt", "desc"))
+  const snap = await getDocs(q)
+
+  return snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }))
+}
+
+// ELIMINAR UNA VENTA
+export async function deleteSale(id: string) {
+  await deleteDoc(doc(db, "sales", id))
+}
+
+// LIMPIAR TODAS LAS VENTAS
+export async function clearSales() {
+  const snap = await getDocs(salesRef)
+
+  const deletes = snap.docs.map((d) =>
+    deleteDoc(doc(db, "sales", d.id))
+  )
+
+  await Promise.all(deletes)
 }

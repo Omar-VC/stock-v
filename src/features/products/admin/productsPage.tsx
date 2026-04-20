@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react"
 import ProductForm from "./productForm"
 import ProductList from "./productList"
-import { getProducts } from "../../../services/productService"
-import type { Product } from "../../../types/product"
+import {
+  getProducts,
+  deleteProduct,
+} from "../../../services/productService"
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [editingProduct, setEditingProduct] = useState<any>(null)
+  const [search, setSearch] = useState("")
 
   const loadProducts = async () => {
     const data = await getProducts()
@@ -16,13 +20,40 @@ export default function ProductsPage() {
     loadProducts()
   }, [])
 
+  const handleDelete = async (id: string) => {
+    if (confirm("¿Eliminar producto?")) {
+      await deleteProduct(id)
+      loadProducts()
+    }
+  }
+
+  const filtered = products.filter((p) =>
+    (p.name + p.variant)
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  )
+
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">Productos</h2>
+    <div className="space-y-6">
 
-      <ProductForm onCreated={loadProducts} />
+      <ProductForm
+        onCreated={loadProducts}
+        editingProduct={editingProduct}
+        setEditingProduct={setEditingProduct}
+      />
 
-      <ProductList products={products} />
+      <input
+        className="border p-2 w-full"
+        placeholder="Buscar producto..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      <ProductList
+        products={filtered}
+        onEdit={setEditingProduct}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }

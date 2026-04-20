@@ -1,86 +1,154 @@
-import { useState } from "react"
-import { createProduct } from "../../../services/productService"
+import { useEffect, useState } from "react"
+import {
+  createProduct,
+  updateProduct,
+} from "../../../services/productService"
 
-export default function ProductForm({ onCreated }: any) {
+export default function ProductForm({
+  onCreated,
+  editingProduct,
+  setEditingProduct,
+}: any) {
   const [name, setName] = useState("")
-  const [price, setPrice] = useState(0)
-  const [quantity, setQuantity] = useState(0)
+  const [variant, setVariant] = useState("")
+  const [costPrice, setCostPrice] = useState(0)
+  const [salePrice, setSalePrice] = useState(0)
+  const [stock, setStock] = useState(0)
+  const [imageUrl, setImageUrl] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (editingProduct) {
+      setName(editingProduct.name)
+      setVariant(editingProduct.variant)
+      setCostPrice(editingProduct.costPrice)
+      setSalePrice(editingProduct.salePrice)
+      setStock(editingProduct.stock)
+      setImageUrl(editingProduct.imageUrl)
+    }
+  }, [editingProduct])
+
+  const handleSubmit = async (e: any) => {
     e.preventDefault()
 
-    if (!name || price <= 0 || quantity < 0) {
-      alert("Completar bien los datos")
-      return
+    const data = {
+      name,
+      variant,
+      costPrice: Number(costPrice),
+      salePrice: Number(salePrice),
+      stock: Number(stock),
+      imageUrl,
     }
 
-    await createProduct({
-      name,
-      category: "indumentaria",
-      price,
-      stock: quantity,
-      createdAt: Date.now(),
-    })
+    if (editingProduct) {
+      await updateProduct(editingProduct.id, data)
+      setEditingProduct(null)
+    } else {
+      await createProduct({
+        ...data,
+        createdAt: Date.now(),
+      })
+    }
 
     setName("")
-    setPrice(0)
-    setQuantity(0)
+    setVariant("")
+    setCostPrice(0)
+    setSalePrice(0)
+    setStock(0)
+    setImageUrl("")
 
     onCreated()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 bg-white p-5 rounded shadow">
 
-      {/* NOMBRE */}
+      <h3 className="font-bold text-lg">
+        {editingProduct ? "Editar producto" : "Nuevo producto"}
+      </h3>
+
+      {/* Nombre */}
       <div>
-        <label className="block text-sm font-medium">
-          Nombre del producto
-        </label>
+        <label className="text-sm text-gray-600">Nombre del producto</label>
         <input
-          className="border p-2 w-full"
-          placeholder="Ej: Boxer Nike"
+          className="border p-2 w-full mt-1"
+          placeholder="Ej: Medias"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
       </div>
 
-      {/* PRECIO */}
+      {/* Variante */}
       <div>
-        <label className="block text-sm font-medium">
-          Precio de venta
-        </label>
+        <label className="text-sm text-gray-600">Variante / Detalle</label>
         <input
-          type="number"
-          className="border p-2 w-full"
-          placeholder="Ej: 5000"
-          value={price}
-          onChange={(e) => setPrice(Number(e.target.value))}
+          className="border p-2 w-full mt-1"
+          placeholder="Ej: Negro T:90"
+          value={variant}
+          onChange={(e) => setVariant(e.target.value)}
         />
-        <p className="text-xs text-gray-500">
-          Precio por unidad
-        </p>
       </div>
 
-      {/* STOCK */}
-      <div>
-        <label className="block text-sm font-medium">
-          Cantidad inicial (stock)
-        </label>
-        <input
-          type="number"
-          className="border p-2 w-full"
-          placeholder="Ej: 10"
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-        />
-        <p className="text-xs text-gray-500">
-          Cuántas unidades tenés disponibles
-        </p>
+      {/* Precios */}
+      <div className="grid grid-cols-2 gap-3">
+
+        <div>
+          <label className="text-sm text-gray-600">
+            Precio de compra
+          </label>
+          <input
+            type="number"
+            className="border p-2 w-full mt-1"
+            value={costPrice}
+            onChange={(e) => setCostPrice(Number(e.target.value))}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm text-gray-600">
+            Precio de venta
+          </label>
+          <input
+            type="number"
+            className="border p-2 w-full mt-1"
+            value={salePrice}
+            onChange={(e) => setSalePrice(Number(e.target.value))}
+          />
+        </div>
+
       </div>
 
-      <button className="bg-black text-white p-2 w-full">
-        Guardar producto
+      {/* Stock */}
+      <div>
+        <label className="text-sm text-gray-600">Cantidad en stock</label>
+        <input
+          type="number"
+          className="border p-2 w-full mt-1"
+          value={stock}
+          onChange={(e) => setStock(Number(e.target.value))}
+        />
+      </div>
+
+      {/* Imagen */}
+      <div>
+        <label className="text-sm text-gray-600">URL de la imagen</label>
+        <input
+          className="border p-2 w-full mt-1"
+          placeholder="https://..."
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+        />
+      </div>
+
+      {/* Preview */}
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          className="h-40 object-cover w-full rounded border"
+        />
+      )}
+
+      <button className="bg-primary text-white p-2 w-full rounded">
+        {editingProduct ? "Actualizar producto" : "Guardar producto"}
       </button>
     </form>
   )
