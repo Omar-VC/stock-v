@@ -6,6 +6,7 @@ import {
   Package,
   ShoppingCart,
   LogOut,
+  Receipt,
 } from "lucide-react"
 
 type Props = {
@@ -75,6 +76,17 @@ export default function Sidebar({ open, setOpen }: Props) {
         >
           <ShoppingCart size={18} />
           Ventas
+        </button>
+
+        {/* 👉 NUEVO: GASTOS */}
+        <button
+          onClick={() => goTo("/admin/expenses")}
+          className={`flex items-center gap-2 p-2 rounded text-left
+            ${isActive("/admin/expenses") ? "bg-white/10" : ""}
+          `}
+        >
+          <Receipt size={18} />
+          Gastos
         </button>
 
         {/* SALIR ABAJO */}
