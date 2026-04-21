@@ -1,15 +1,16 @@
-import { createBrowserRouter } from "react-router-dom"
-import ProtectedRoute from "../components/ProtectedRoute"
+import { createBrowserRouter } from "react-router-dom";
+import ProtectedRoute from "../components/ProtectedRoute";
 
-import AdminLayout from "./layout/AdminLayout"
-import PublicLayout from "./layout/PublicLayout"
+import AdminLayout from "./layout/AdminLayout";
+import PublicLayout from "./layout/PublicLayout";
 
-import Login from "../features/auth/login"
-import Dashboard from "../features/dashboard/dashboardPage"
-import ProductsPage from "../features/products/admin/productsPage"
-import CatalogPage from "../features/products/public/catalogPage"
-import SalesPage from "../features/sales/salesPage"
-import ExpensesPage from "../features/expenses/admin/expensesPage" // 👈 NUEVO
+import Login from "../features/auth/login";
+import Dashboard from "../features/dashboard/dashboardPage";
+import ProductsPage from "../features/products/admin/productsPage";
+import CatalogPage from "../features/products/public/catalogPage";
+import SalesPage from "../features/sales/salesPage";
+import ExpensesPage from "../features/expenses/admin/expensesPage"; // 👈 NUEVO
+import CategoriesPage from "../features/categories/admin/categoriesPage";
 
 export const router = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
         path: "expenses", // 👈 NUEVO
         element: <ExpensesPage />,
       },
+      {
+        path: "categories",
+        element: <CategoriesPage />,
+      },
     ],
   },
-])
+]);

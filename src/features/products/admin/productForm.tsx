@@ -3,8 +3,7 @@ import {
   createProduct,
   updateProduct,
 } from "../../../services/productService"
-
-type Category = "lenceria" | "ropa_interior" | "perfume"
+import { getCategories } from "../../../services/categoryService"
 
 export default function ProductForm({
   onCreated,
@@ -14,17 +13,29 @@ export default function ProductForm({
 
   const [name, setName] = useState("")
   const [variant, setVariant] = useState("")
-  const [category, setCategory] = useState<Category>("lenceria")
+  const [category, setCategory] = useState("")
+  const [categories, setCategories] = useState<any[]>([])
   const [costPrice, setCostPrice] = useState(0)
   const [salePrice, setSalePrice] = useState(0)
   const [stock, setStock] = useState(0)
   const [imageUrl, setImageUrl] = useState("")
 
+  // 🔹 cargar categorías desde Firebase
+  useEffect(() => {
+    const loadCategories = async () => {
+      const data = await getCategories()
+      setCategories(data)
+    }
+
+    loadCategories()
+  }, [])
+
+  // 🔹 cargar producto en edición
   useEffect(() => {
     if (editingProduct) {
       setName(editingProduct.name || "")
       setVariant(editingProduct.variant || "")
-      setCategory(editingProduct.category || "lenceria")
+      setCategory(editingProduct.category || "")
       setCostPrice(editingProduct.costPrice || 0)
       setSalePrice(editingProduct.salePrice || 0)
       setStock(editingProduct.stock || 0)
@@ -57,7 +68,7 @@ export default function ProductForm({
 
     setName("")
     setVariant("")
-    setCategory("lenceria")
+    setCategory("")
     setCostPrice(0)
     setSalePrice(0)
     setStock(0)
@@ -93,17 +104,21 @@ export default function ProductForm({
         />
       </div>
 
-      {/* Categoría */}
+      {/* Categoría dinámica */}
       <div>
         <label className="text-sm text-gray-600">Categoría</label>
         <select
           className="border p-2 w-full mt-1"
           value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
+          onChange={(e) => setCategory(e.target.value)}
         >
-          <option value="lenceria">Lencería</option>
-          <option value="ropa_interior">Ropa interior</option>
-          <option value="perfume">Perfume</option>
+          <option value="">Seleccionar</option>
+
+          {categories.map((c) => (
+            <option key={c.id} value={c.name}>
+              {c.name}
+            </option>
+          ))}
         </select>
       </div>
 

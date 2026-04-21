@@ -11,6 +11,7 @@ export default function ProductList({
         <thead className="bg-gray-100">
           <tr>
             <th className="p-2">Producto</th>
+            <th className="p-2">Categoría</th> {/* 👈 NUEVO */}
             <th className="p-2">Detalle</th>
             <th className="p-2">Compra</th>
             <th className="p-2">Venta</th>
@@ -28,7 +29,14 @@ export default function ProductList({
               <tr key={p.id} className="border-t">
 
                 <td className="p-2">{p.name}</td>
+
+                {/* 👇 NUEVO */}
+                <td className="p-2 text-gray-600">
+                  {p.category || "-"}
+                </td>
+
                 <td className="p-2">{p.variant}</td>
+
                 <td className="p-2">${p.costPrice}</td>
 
                 <td className="p-2 text-primary font-bold">

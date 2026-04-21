@@ -2,7 +2,7 @@ export type Product = {
   id: string
   name: string
   variant: string
-  category: "lenceria" | "ropa_interior" | "perfume"
+  category: string // 👈 ahora dinámico
   stock: number
   salePrice: number
   costPrice: number

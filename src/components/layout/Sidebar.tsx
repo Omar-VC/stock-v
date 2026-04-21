@@ -1,34 +1,35 @@
-import { useLocation, useNavigate } from "react-router-dom"
-import { signOut } from "firebase/auth"
-import { auth } from "../../services/firebase"
+import { useLocation, useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../../services/firebase";
 import {
   LayoutDashboard,
   Package,
   ShoppingCart,
   LogOut,
   Receipt,
-} from "lucide-react"
+  Tags,
+} from "lucide-react";
 
 type Props = {
-  open: boolean
-  setOpen: (value: boolean) => void
-}
+  open: boolean;
+  setOpen: (value: boolean) => void;
+};
 
 export default function Sidebar({ open, setOpen }: Props) {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const goTo = (path: string) => {
-    navigate(path)
-    setOpen(false)
-  }
+    navigate(path);
+    setOpen(false);
+  };
 
   const handleLogout = async () => {
-    await signOut(auth)
-    navigate("/login")
-  }
+    await signOut(auth);
+    navigate("/login");
+  };
 
-  const isActive = (path: string) => location.pathname === path
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <aside
@@ -69,6 +70,16 @@ export default function Sidebar({ open, setOpen }: Props) {
         </button>
 
         <button
+          onClick={() => goTo("/admin/categories")}
+          className={`flex items-center gap-2 p-2 rounded text-left
+            ${isActive("/admin/categories") ? "bg-white/10" : ""}
+          `}
+        >
+          <Tags size={18} />
+          Categorías
+        </button>
+
+        <button
           onClick={() => goTo("/admin/sales")}
           className={`flex items-center gap-2 p-2 rounded text-left
             ${isActive("/admin/sales") ? "bg-white/10" : ""}
@@ -78,7 +89,6 @@ export default function Sidebar({ open, setOpen }: Props) {
           Ventas
         </button>
 
-        {/* 👉 NUEVO: GASTOS */}
         <button
           onClick={() => goTo("/admin/expenses")}
           className={`flex items-center gap-2 p-2 rounded text-left
@@ -102,5 +112,5 @@ export default function Sidebar({ open, setOpen }: Props) {
 
       </nav>
     </aside>
-  )
+  );
 }
