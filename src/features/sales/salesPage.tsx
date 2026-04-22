@@ -6,6 +6,7 @@ import {
   deleteSale,
   clearSales,
 } from "../../services/salesService"
+import { getCategories } from "../../services/categoryService"
 import type { Product } from "../../types/product"
 
 type Sale = {
@@ -18,6 +19,7 @@ type Sale = {
 
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<any[]>([])
   const [sales, setSales] = useState<Sale[]>([])
   const [selectedId, setSelectedId] = useState("")
   const [quantity, setQuantity] = useState(1)
@@ -25,11 +27,17 @@ export default function SalesPage() {
   useEffect(() => {
     loadProducts()
     loadSales()
+    loadCategories()
   }, [])
 
   const loadProducts = async () => {
     const data = await getProducts()
     setProducts(data)
+  }
+
+  const loadCategories = async () => {
+    const data = await getCategories()
+    setCategories(data)
   }
 
   const loadSales = async () => {
@@ -68,6 +76,33 @@ export default function SalesPage() {
     return ts.toDate().toLocaleString()
   }
 
+  // 💰 Total de hoy
+  const getTodayTotal = () => {
+    const today = new Date().toLocaleDateString()
+
+    return sales.reduce((acc, s) => {
+      if (!s.createdAt) return acc
+      const date = s.createdAt.toDate().toLocaleDateString()
+      return date === today ? acc + s.total : acc
+    }, 0)
+  }
+
+  // 📊 Totales por día
+  const getTotalsByDay = () => {
+    const totals: Record<string, number> = {}
+
+    sales.forEach((s) => {
+      if (!s.createdAt) return
+
+      const date = s.createdAt.toDate().toLocaleDateString()
+
+      if (!totals[date]) totals[date] = 0
+      totals[date] += s.total
+    })
+
+    return totals
+  }
+
   return (
     <div className="space-y-6">
 
@@ -75,16 +110,24 @@ export default function SalesPage() {
 
       {/* FORM */}
       <div className="bg-white p-4 rounded shadow space-y-3">
+
         <select
           className="border p-2 w-full"
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
         >
           <option value="">Seleccionar producto</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} (stock: {p.stock})
-            </option>
+
+          {categories.map((cat) => (
+            <optgroup key={cat.id} label={cat.name}>
+              {products
+                .filter((p) => p.category === cat.name)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} (stock: {p.stock})
+                  </option>
+                ))}
+            </optgroup>
           ))}
         </select>
 
@@ -102,6 +145,30 @@ export default function SalesPage() {
         >
           Registrar venta
         </button>
+      </div>
+
+      {/* 💰 RESUMEN */}
+      <div className="bg-white p-4 rounded shadow space-y-2">
+        <h3 className="font-bold">Resumen</h3>
+
+        <p className="text-lg font-bold text-green-600">
+          Hoy: ${getTodayTotal()}
+        </p>
+      </div>
+
+      {/* 📊 VENTAS POR DÍA */}
+      <div className="bg-white p-4 rounded shadow">
+        <h3 className="font-bold mb-2">Ventas por día</h3>
+
+        {Object.entries(getTotalsByDay()).map(([date, total]) => (
+          <div
+            key={date}
+            className="flex justify-between border-b py-1"
+          >
+            <span>{date}</span>
+            <span className="font-bold">${total}</span>
+          </div>
+        ))}
       </div>
 
       {/* HISTORIAL */}
@@ -130,9 +197,7 @@ export default function SalesPage() {
                 className="flex justify-between items-center p-4"
               >
                 <div>
-                  <p className="font-medium">
-                    {s.productName}
-                  </p>
+                  <p className="font-medium">{s.productName}</p>
                   <p className="text-sm text-gray-500">
                     Cantidad: {s.quantity}
                   </p>
