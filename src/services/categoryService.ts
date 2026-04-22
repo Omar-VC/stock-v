@@ -4,20 +4,24 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  query,
+  orderBy,
 } from "firebase/firestore"
 import { db } from "./firebase"
 
 const COLLECTION = "categories"
+const ref = collection(db, COLLECTION)
 
 export const createCategory = async (name: string) => {
-  return await addDoc(collection(db, COLLECTION), {
+  return await addDoc(ref, {
     name,
-    createdAt: new Date().toISOString(),
+    createdAt: Date.now(),
   })
 }
 
 export const getCategories = async () => {
-  const snapshot = await getDocs(collection(db, COLLECTION))
+  const q = query(ref, orderBy("name", "asc")) // 🔥 orden simple y eficiente
+  const snapshot = await getDocs(q)
 
   return snapshot.docs.map((doc) => ({
     id: doc.id,

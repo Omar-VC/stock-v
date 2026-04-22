@@ -5,6 +5,9 @@ import {
   deleteDoc,
   updateDoc,
   doc,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import type { Product } from "../types/product"
@@ -12,7 +15,13 @@ import type { Product } from "../types/product"
 const ref = collection(db, "products")
 
 export const getProducts = async (): Promise<Product[]> => {
-  const snap = await getDocs(ref)
+  const q = query(
+    ref,
+    orderBy("createdAt", "desc"),
+    limit(100) // 🔥 clave: no traer todo
+  )
+
+  const snap = await getDocs(q)
 
   return snap.docs.map((d) => {
     const data = d.data()

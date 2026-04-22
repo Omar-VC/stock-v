@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getProducts } from "../../services/productService"
 import { getCategories } from "../../services/categoryService"
 
@@ -7,22 +7,50 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getProducts().then(setProducts)
-    getCategories().then(setCategories)
+    const loadData = async () => {
+      try {
+        setLoading(true)
+
+        const [productsData, categoriesData] = await Promise.all([
+          getProducts(),
+          getCategories(),
+        ])
+
+        setProducts(productsData)
+        setCategories(categoriesData)
+      } catch (error) {
+        console.error("Error cargando datos:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
   }, [])
 
-  const filtered = products.filter((p) => {
-    const matchesSearch = (p.name + p.variant)
-      .toLowerCase()
-      .includes(search.toLowerCase())
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch = (p.name + p.variant)
+        .toLowerCase()
+        .includes(search.toLowerCase())
 
-    const matchesCategory =
-      !selectedCategory || p.category === selectedCategory
+      const matchesCategory =
+        !selectedCategory || p.category === selectedCategory
 
-    return matchesSearch && matchesCategory
-  })
+      return matchesSearch && matchesCategory
+    })
+  }, [products, search, selectedCategory])
+
+  const visibleProducts = useMemo(() => {
+    return filtered.slice(0, 50)
+  }, [filtered])
+
+  if (loading) {
+    return <p className="p-4 text-center">Cargando...</p>
+  }
 
   return (
     <div className="space-y-6">
@@ -56,7 +84,7 @@ export default function DashboardPage() {
         </select>
       </div>
 
-      {/* 📦 LISTA TIPO CATALOGO */}
+      {/* 📦 LISTA */}
       <div className="bg-white rounded shadow overflow-hidden">
 
         <div className="p-4 border-b">
@@ -67,13 +95,12 @@ export default function DashboardPage() {
 
         <div className="divide-y">
 
-          {filtered.map((p) => (
+          {visibleProducts.map((p) => (
             <div
               key={p.id}
               className="flex justify-between items-center p-4 hover:bg-gray-50"
             >
 
-              {/* Info */}
               <div>
                 <p className="font-medium text-dark">
                   {p.name}
@@ -83,13 +110,11 @@ export default function DashboardPage() {
                   {p.variant}
                 </p>
 
-                {/* 👇 categoría visible */}
                 <p className="text-xs text-gray-400">
                   {p.category}
                 </p>
               </div>
 
-              {/* Datos */}
               <div className="text-right space-y-1">
                 <p className="font-bold text-primary">
                   ${p.salePrice}
