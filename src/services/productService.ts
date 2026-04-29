@@ -7,7 +7,6 @@ import {
   doc,
   query,
   orderBy,
-  limit,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import type { Product } from "../types/product"
@@ -17,8 +16,7 @@ const ref = collection(db, "products")
 export const getProducts = async (): Promise<Product[]> => {
   const q = query(
     ref,
-    orderBy("createdAt", "desc"),
-    limit(100) // 🔥 clave: no traer todo
+    orderBy("createdAt", "desc")
   )
 
   const snap = await getDocs(q)
@@ -30,7 +28,7 @@ export const getProducts = async (): Promise<Product[]> => {
       id: d.id,
       name: data.name ?? "",
       variant: data.variant ?? "",
-      category: data.category ?? "lenceria",
+      category: data.category ?? "",
       stock: Number(data.stock ?? 0),
       salePrice: Number(data.salePrice ?? data.price ?? 0),
       costPrice: Number(data.costPrice ?? 0),
@@ -45,7 +43,7 @@ export const createProduct = async (
 ) => {
   await addDoc(ref, {
     ...data,
-    category: data.category ?? "lenceria",
+    category: data.category ?? "",
     stock: Number(data.stock),
     salePrice: Number(data.salePrice),
     costPrice: Number(data.costPrice),
