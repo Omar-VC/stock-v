@@ -124,7 +124,7 @@ export default function SalesPage() {
                 .filter((p) => p.category === cat.name)
                 .map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} (stock: {p.stock})
+                     {p.name} | {p.variant} | Stock: {p.stock}
                   </option>
                 ))}
             </optgroup>
