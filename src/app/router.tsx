@@ -11,6 +11,8 @@ import CatalogPage from "../features/products/public/catalogPage";
 import SalesPage from "../features/sales/salesPage";
 import ExpensesPage from "../features/expenses/admin/expensesPage"; // 👈 NUEVO
 import CategoriesPage from "../features/categories/admin/categoriesPage";
+import CustomersPage from "../features/customers/customersPage";
+import CustomerDetailPage from "../features/customers/customerDetailPage";
 
 export const router = createBrowserRouter([
   {
@@ -54,6 +56,14 @@ export const router = createBrowserRouter([
       {
         path: "categories",
         element: <CategoriesPage />,
+      },
+      {
+        path: "customers",
+        element: <CustomersPage />,
+      },
+      {
+        path: "customers/:id",
+        element: <CustomerDetailPage />,
       },
     ],
   },

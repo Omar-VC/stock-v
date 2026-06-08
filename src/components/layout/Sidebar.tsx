@@ -8,6 +8,7 @@ import {
   LogOut,
   Receipt,
   Tags,
+  Users,
 } from "lucide-react";
 
 type Props = {
@@ -48,7 +49,6 @@ export default function Sidebar({ open, setOpen }: Props) {
 
       {/* NAV */}
       <nav className="flex flex-col flex-1 p-4 gap-2 text-sm">
-
         <button
           onClick={() => goTo("/admin/dashboard")}
           className={`flex items-center gap-2 p-2 rounded text-left
@@ -99,6 +99,16 @@ export default function Sidebar({ open, setOpen }: Props) {
           Gastos
         </button>
 
+        <button
+          onClick={() => goTo("/admin/customers")}
+          className={`flex items-center gap-2 p-2 rounded text-left
+    ${isActive("/admin/customers") ? "bg-white/10" : ""}
+  `}
+        >
+          <Users size={18} />
+          Clientes
+        </button>
+
         {/* SALIR ABAJO */}
         <div className="mt-auto pt-4">
           <button
@@ -109,7 +119,6 @@ export default function Sidebar({ open, setOpen }: Props) {
             Salir
           </button>
         </div>
-
       </nav>
     </aside>
   );
