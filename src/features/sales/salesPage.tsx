@@ -1,107 +1,164 @@
-import { useEffect, useState } from "react"
-import { getProducts } from "../../services/productService"
+import { useEffect, useState } from "react";
+import { getProducts } from "../../services/productService";
 import {
   createSale,
   getSales,
-  deleteSale,
+  
   clearSales,
-} from "../../services/salesService"
-import { getCategories } from "../../services/categoryService"
-import type { Product } from "../../types/product"
+  cancelSale,
+} from "../../services/salesService";
+import { getCategories } from "../../services/categoryService";
+import type { Product } from "../../types/product";
+import { getCustomers } from "../../services/customerService";
+import { createMovement } from "../../services/customerMovementService";
+import { updateCustomerBalance } from "../../services/customerService";
 
 type Sale = {
-  id: string
-  productName: string
-  quantity: number
-  total: number
-  createdAt?: any
-}
+  id: string;
+  productName: string;
+  quantity: number;
+  total: number;
+  createdAt?: any;
+
+  saleType?: string;
+  customerId?: string;
+  status?: string;
+};
 
 export default function SalesPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<any[]>([])
-  const [sales, setSales] = useState<Sale[]>([])
-  const [selectedId, setSelectedId] = useState("")
-  const [quantity, setQuantity] = useState(1)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [saleType, setSaleType] = useState("cash");
+  const [customerId, setCustomerId] = useState("");
 
   useEffect(() => {
-    loadProducts()
-    loadSales()
-    loadCategories()
-  }, [])
+    loadProducts();
+    loadSales();
+    loadCategories();
+    loadCustomers();
+  }, []);
 
   const loadProducts = async () => {
-    const data = await getProducts()
-    setProducts(data)
-  }
+    const data = await getProducts();
+    setProducts(data);
+  };
 
   const loadCategories = async () => {
-    const data = await getCategories()
-    setCategories(data)
-  }
+    const data = await getCategories();
+    setCategories(data);
+  };
+
+  const loadCustomers = async () => {
+    const data = await getCustomers();
+    setCustomers(data);
+  };
 
   const loadSales = async () => {
-    const data = await getSales()
-    setSales(data as Sale[])
-  }
+    const data = await getSales();
+    setSales(data as Sale[]);
+  };
 
   const handleSale = async () => {
-    if (!selectedId) return
+    if (!selectedId) {
+      alert("Seleccionar producto");
+      return;
+    }
 
     try {
-      await createSale(selectedId, quantity)
-      setQuantity(1)
-      setSelectedId("")
-      loadProducts()
-      loadSales()
-    } catch (err: any) {
-      alert(err.message)
-    }
-  }
+      const product = products.find((p) => p.id === selectedId);
+      if (!product) return;
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar esta venta?")) return
-    await deleteSale(id)
-    loadSales()
-  }
+      const total = (product.salePrice || 0) * quantity;
+
+      // 1) SIEMPRE crear venta
+      await createSale(selectedId, quantity, saleType, customerId);
+
+      // 2) SOLO cuenta corriente afecta cliente
+      if (saleType === "account") {
+        if (!customerId) {
+          alert("Seleccionar cliente");
+          return;
+        }
+
+        const customer = customers.find((c) => c.id === customerId);
+
+        if (customer) {
+          await createMovement({
+            customerId,
+            type: "debt",
+            description: `${product.name} x${quantity}`,
+            amount: total,
+            createdAt: Date.now(),
+          });
+
+          await updateCustomerBalance(customerId, customer.balance + total);
+        }
+      }
+
+      setQuantity(1);
+      setSelectedId("");
+      setCustomerId("");
+
+      loadProducts();
+      loadSales();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (!confirm("¿Anular esta venta?")) return;
+
+    try {
+      await cancelSale(id);
+      loadSales();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
 
   const handleClear = async () => {
-    if (!confirm("¿Borrar TODO el historial?")) return
-    await clearSales()
-    loadSales()
-  }
+    if (!confirm("¿Borrar TODO el historial?")) return;
+    await clearSales();
+    loadSales();
+  };
 
   const formatDate = (ts: any) => {
-    if (!ts) return ""
-    return ts.toDate().toLocaleString()
-  }
+    if (!ts) return "";
+    return ts.toDate().toLocaleString();
+  };
 
-  // 💰 Total de hoy
   const getTodayTotal = () => {
-    const today = new Date().toLocaleDateString()
+    const today = new Date().toLocaleDateString();
 
     return sales.reduce((acc, s) => {
-      if (!s.createdAt) return acc
-      const date = s.createdAt.toDate().toLocaleDateString()
-      return date === today ? acc + s.total : acc
-    }, 0)
-  }
+      if (!s.createdAt) return acc;
+      if (s.status === "cancelled") return acc;
 
-  // 📊 Totales por día
+      const date = s.createdAt.toDate().toLocaleDateString();
+      return date === today ? acc + s.total : acc;
+    }, 0);
+  };
+
   const getTotalsByDay = () => {
-    const totals: Record<string, number> = {}
+    const totals: Record<string, number> = {};
 
     sales.forEach((s) => {
-      if (!s.createdAt) return
+      if (!s.createdAt) return;
+      if (s.status === "cancelled") return;
 
-      const date = s.createdAt.toDate().toLocaleDateString()
+      const date = s.createdAt.toDate().toLocaleDateString();
 
-      if (!totals[date]) totals[date] = 0
-      totals[date] += s.total
-    })
+      if (!totals[date]) totals[date] = 0;
+      totals[date] += s.total;
+    });
 
-    return totals
-  }
+    return totals;
+  };
 
   return (
     <div className="space-y-6">
@@ -124,7 +181,7 @@ export default function SalesPage() {
                 .filter((p) => p.category === cat.name)
                 .map((p) => (
                   <option key={p.id} value={p.id}>
-                     {p.name} | {p.variant} | Stock: {p.stock}
+                    {p.name} | {p.variant} | Stock: {p.stock}
                   </option>
                 ))}
             </optgroup>
@@ -139,6 +196,31 @@ export default function SalesPage() {
           onChange={(e) => setQuantity(Number(e.target.value))}
         />
 
+        <select
+          className="border p-2 w-full"
+          value={saleType}
+          onChange={(e) => setSaleType(e.target.value)}
+        >
+          <option value="cash">Contado</option>
+          <option value="account">Cuenta corriente</option>
+        </select>
+
+        {saleType === "account" && (
+          <select
+            className="border p-2 w-full"
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
+          >
+            <option value="">Seleccionar cliente</option>
+
+            {customers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
+
         <button
           onClick={handleSale}
           className="bg-black text-white p-2 w-full rounded"
@@ -147,7 +229,7 @@ export default function SalesPage() {
         </button>
       </div>
 
-      {/* 💰 RESUMEN */}
+      {/* RESUMEN */}
       <div className="bg-white p-4 rounded shadow space-y-2">
         <h3 className="font-bold">Resumen</h3>
 
@@ -156,15 +238,12 @@ export default function SalesPage() {
         </p>
       </div>
 
-      {/* 📊 VENTAS POR DÍA */}
+      {/* POR DÍA */}
       <div className="bg-white p-4 rounded shadow">
         <h3 className="font-bold mb-2">Ventas por día</h3>
 
         {Object.entries(getTotalsByDay()).map(([date, total]) => (
-          <div
-            key={date}
-            className="flex justify-between border-b py-1"
-          >
+          <div key={date} className="flex justify-between border-b py-1">
             <span>{date}</span>
             <span className="font-bold">${total}</span>
           </div>
@@ -194,7 +273,9 @@ export default function SalesPage() {
             sales.map((s) => (
               <div
                 key={s.id}
-                className="flex justify-between items-center p-4"
+                className={`flex justify-between items-center p-4 ${
+                  s.status === "cancelled" ? "opacity-50" : ""
+                }`}
               >
                 <div>
                   <p className="font-medium">{s.productName}</p>
@@ -207,15 +288,18 @@ export default function SalesPage() {
                 </div>
 
                 <div className="text-right space-y-2">
-                  <p className="font-bold text-green-600">
-                    ${s.total}
-                  </p>
+                  <p className="font-bold text-green-600">${s.total}</p>
 
                   <button
-                    onClick={() => handleDelete(s.id)}
-                    className="text-xs text-red-500"
+                    onClick={() => handleCancel(s.id)}
+                    disabled={s.status === "cancelled"}
+                    className={`text-xs ${
+                      s.status === "cancelled"
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-red-500"
+                    }`}
                   >
-                    Eliminar
+                    {s.status === "cancelled" ? "Anulada" : "Anular"}
                   </button>
                 </div>
               </div>
@@ -225,5 +309,5 @@ export default function SalesPage() {
       </div>
 
     </div>
-  )
+  );
 }

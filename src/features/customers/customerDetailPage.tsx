@@ -9,59 +9,35 @@ import {
   getCustomerMovements,
 } from "../../services/customerMovementService";
 
+import { deleteDoc, doc } from "firebase/firestore";
+import { db } from "../../services/firebase";
+
 export default function CustomerDetailPage() {
   const { id } = useParams();
 
   const [customer, setCustomer] = useState<any>(null);
+  const [movements, setMovements] = useState<any[]>([]);
+
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState(0);
-  const [movements, setMovements] = useState<any[]>([]);
-  const [mode, setMode] = useState<"debt" | "payment">("debt");
-
-  const loadMovements = async () => {
+  const loadData = async () => {
     if (!id) return;
 
-    const data = await getCustomerMovements(id);
-    setMovements(data);
+    const [c, m] = await Promise.all([
+      getCustomerById(id),
+      getCustomerMovements(id),
+    ]);
+
+    setCustomer(c);
+    setMovements(m);
   };
 
   useEffect(() => {
-    if (!id) return;
-
-    getCustomerById(id).then(setCustomer);
-    loadMovements();
+    loadData();
   }, [id]);
 
-  const handleDebt = async () => {
-    if (!id || !amount) return;
-
-    await createMovement({
-      customerId: id,
-      type: "debt",
-      description,
-      amount,
-      createdAt: Date.now(),
-    });
-
-    const newBalance = customer.balance + amount;
-
-    await updateCustomerBalance(id, newBalance);
-
-    setCustomer({
-      ...customer,
-      balance: newBalance,
-    });
-
-    setDescription("");
-    setAmount(0);
-
-    loadMovements();
-
-    alert("Deuda registrada");
-  };
-
   const handlePayment = async () => {
-    if (!id || !amount) return;
+    if (!id || !amount || !customer) return;
 
     await createMovement({
       customerId: id,
@@ -75,62 +51,85 @@ export default function CustomerDetailPage() {
 
     await updateCustomerBalance(id, newBalance);
 
-    setCustomer({
-      ...customer,
-      balance: newBalance,
-    });
+    setCustomer({ ...customer, balance: newBalance });
 
-    setDescription("");
     setAmount(0);
-
-    loadMovements();
-
-    alert("Pago registrado");
+    setDescription("");
+    loadData();
   };
 
   if (!customer) {
     return <div className="bg-white p-4 rounded shadow">Cargando...</div>;
   }
 
+  const handleClearMovements = async () => {
+    if (!id) return;
+    if (!confirm("¿Borrar todo el historial de este cliente?")) return;
+
+    const data = await getCustomerMovements(id);
+
+    await Promise.all(
+      data.map((m: any) => deleteDoc(doc(db, "customerMovements", m.id))),
+    );
+
+    loadData();
+  };
+
+  const handleResetBalance = async () => {
+    if (!id || !customer) return;
+
+    const adjustment = -customer.balance; // deja en 0
+
+    await createMovement({
+      customerId: id,
+      type: "adjustment",
+      description: "Ajuste de cuenta",
+      amount: adjustment,
+      createdAt: Date.now(),
+    });
+
+    await updateCustomerBalance(id, 0);
+
+    setCustomer({
+      ...customer,
+      balance: 0,
+    });
+
+    loadData();
+  };
+
   return (
     <div className="space-y-6">
       {/* DATOS CLIENTE */}
       <div className="bg-white p-6 rounded shadow">
         <h2 className="text-2xl font-bold">{customer.name}</h2>
+        <p className="text-gray-500 mt-2">{customer.phone || "-"}</p>
 
-        <p className="text-gray-500 mt-2">Teléfono: {customer.phone || "-"}</p>
-
-        <p className="text-xl font-bold text-green-600 mt-4">
-          Saldo actual: ${customer.balance}
+        <p
+          className={`text-xl font-bold mt-4 ${
+            customer.balance > 0
+              ? "text-red-600"
+              : customer.balance < 0
+                ? "text-green-600"
+                : "text-gray-700"
+          }`}
+        >
+          {customer.balance > 0 && `Debe: $${customer.balance}`}
+          {customer.balance < 0 && `A favor: $${Math.abs(customer.balance)}`}
+          {customer.balance === 0 && "Saldo al día: $0"}
         </p>
-      </div>
-
-      {/* BOTONES */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => setMode("debt")}
-          className={`px-4 py-2 rounded text-white ${
-            mode === "debt" ? "bg-red-500" : "bg-gray-400"
-          }`}
-        >
-          Registrar deuda
-        </button>
 
         <button
-          onClick={() => setMode("payment")}
-          className={`px-4 py-2 rounded text-white ${
-            mode === "payment" ? "bg-green-600" : "bg-gray-400"
-          }`}
+          onClick={handleResetBalance}
+          className="mt-3 bg-gray-700 text-white px-3 py-1 rounded"
         >
-          Registrar pago
+          Ajustar a cero
         </button>
       </div>
 
-      {/* FORMULARIO DEUDA */}
+      {/* FORM SOLO PAGO */}
       <div className="bg-white p-4 rounded shadow space-y-3">
-        <h3 className="font-bold">
-          {mode === "debt" ? "Registrar deuda" : "Registrar pago"}
-        </h3>
+        <h3 className="font-bold">Registrar pago</h3>
 
         <input
           className="border p-2 w-full"
@@ -148,18 +147,23 @@ export default function CustomerDetailPage() {
         />
 
         <button
-          onClick={mode === "debt" ? handleDebt : handlePayment}
-          className={`text-white px-4 py-2 rounded ${
-            mode === "debt" ? "bg-red-500" : "bg-green-600"
-          }`}
+          onClick={handlePayment}
+          className="bg-green-600 text-white px-4 py-2 rounded"
         >
-          {mode === "debt" ? "Guardar deuda" : "Guardar pago"}
+          Guardar pago
         </button>
       </div>
 
       {/* HISTORIAL */}
       <div className="bg-white p-4 rounded shadow">
         <h3 className="font-bold mb-4">Historial</h3>
+
+        <button
+          onClick={handleClearMovements}
+          className="text-xs bg-red-500 text-white px-3 py-1 rounded"
+        >
+          Limpiar historial
+        </button>
 
         {movements.length === 0 ? (
           <p className="text-gray-500">Sin movimientos</p>
