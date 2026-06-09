@@ -21,10 +21,10 @@ export default function CategoryForm({ onCreated }: any) {
         placeholder="Nueva categoría"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="border p-2 flex-1"
+        className="border border-gray-300 p-2 flex-1 rounded focus:outline-none focus:border-primary"
       />
 
-      <button className="bg-primary text-white px-4 rounded">
+      <button className="bg-primary text-dark font-semibold px-4 rounded hover:bg-primaryHover transition">
         Agregar
       </button>
     </form>

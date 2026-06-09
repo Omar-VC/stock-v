@@ -43,7 +43,7 @@ export default function Sidebar({ open, setOpen }: Props) {
       `}
     >
       {/* HEADER */}
-      <div className="p-4 font-bold text-lg border-b border-white/10">
+      <div className="p-4 font-bold text-xl text-primary border-b border-white/10">
         Santa Julia
       </div>
 
@@ -52,7 +52,11 @@ export default function Sidebar({ open, setOpen }: Props) {
         <button
           onClick={() => goTo("/admin/dashboard")}
           className={`flex items-center gap-2 p-2 rounded text-left
-            ${isActive("/admin/dashboard") ? "bg-white/10" : ""}
+            ${
+              isActive("/admin/dashboard")
+                ? "bg-primary text-dark font-semibold"
+                : ""
+            }
           `}
         >
           <LayoutDashboard size={18} />
@@ -62,7 +66,11 @@ export default function Sidebar({ open, setOpen }: Props) {
         <button
           onClick={() => goTo("/admin/products")}
           className={`flex items-center gap-2 p-2 rounded text-left
-            ${isActive("/admin/products") ? "bg-white/10" : ""}
+            ${
+              isActive("/admin/products")
+                ? "bg-primary text-dark font-semibold"
+                : ""
+            }
           `}
         >
           <Package size={18} />
@@ -72,7 +80,11 @@ export default function Sidebar({ open, setOpen }: Props) {
         <button
           onClick={() => goTo("/admin/categories")}
           className={`flex items-center gap-2 p-2 rounded text-left
-            ${isActive("/admin/categories") ? "bg-white/10" : ""}
+            ${
+              isActive("/admin/categories")
+                ? "bg-primary text-dark font-semibold"
+                : ""
+            }
           `}
         >
           <Tags size={18} />
@@ -82,7 +94,11 @@ export default function Sidebar({ open, setOpen }: Props) {
         <button
           onClick={() => goTo("/admin/sales")}
           className={`flex items-center gap-2 p-2 rounded text-left
-            ${isActive("/admin/sales") ? "bg-white/10" : ""}
+            ${
+              isActive("/admin/sales")
+                ? "bg-primary text-dark font-semibold"
+                : ""
+            }
           `}
         >
           <ShoppingCart size={18} />
@@ -92,7 +108,11 @@ export default function Sidebar({ open, setOpen }: Props) {
         <button
           onClick={() => goTo("/admin/expenses")}
           className={`flex items-center gap-2 p-2 rounded text-left
-            ${isActive("/admin/expenses") ? "bg-white/10" : ""}
+            ${
+              isActive("/admin/expenses")
+                ? "bg-primary text-dark font-semibold"
+                : ""
+            }
           `}
         >
           <Receipt size={18} />
@@ -102,7 +122,7 @@ export default function Sidebar({ open, setOpen }: Props) {
         <button
           onClick={() => goTo("/admin/customers")}
           className={`flex items-center gap-2 p-2 rounded text-left
-    ${isActive("/admin/customers") ? "bg-white/10" : ""}
+    ${isActive("/admin/customers") ? "bg-primary text-dark font-semibold" : ""}
   `}
         >
           <Users size={18} />

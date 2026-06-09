@@ -4,72 +4,97 @@ export default function ProductList({
   onDelete,
 }: any) {
   return (
-    <div className="bg-white rounded shadow overflow-x-auto">
+    <div className="bg-white rounded shadow overflow-hidden">
 
-      <table className="w-full text-sm">
+      <div className="bg-secondary px-4 py-3 border-b">
+        <h3 className="font-bold text-dark">
+          Productos registrados
+        </h3>
+      </div>
 
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2">Producto</th>
-            <th className="p-2">Categoría</th> {/* 👈 NUEVO */}
-            <th className="p-2">Detalle</th>
-            <th className="p-2">Compra</th>
-            <th className="p-2">Venta</th>
-            <th className="p-2">Ganancia</th>
-            <th className="p-2">Stock</th>
-            <th className="p-2">Acciones</th>
-          </tr>
-        </thead>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
 
-        <tbody>
-          {products.map((p: any) => {
-            const gain = p.salePrice - p.costPrice
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-2 text-left">Producto</th>
+              <th className="p-2 text-left hidden md:table-cell">Categoría</th>
+              <th className="p-2 text-left hidden md:table-cell">Detalle</th>
+              <th className="p-2 text-left hidden md:table-cell">Compra</th>
+              <th className="p-2 text-left">Venta</th>
+              <th className="p-2 text-left hidden md:table-cell">Ganancia</th>
+              <th className="p-2 text-left">Stock</th>
+              <th className="p-2 text-left">Acciones</th>
+            </tr>
+          </thead>
 
-            return (
-              <tr key={p.id} className="border-t">
+          <tbody>
+            {products.map((p: any) => {
+              const gain = p.salePrice - p.costPrice
 
-                <td className="p-2">{p.name}</td>
+              return (
+                <tr key={p.id} className="border-t hover:bg-gray-50">
 
-                {/* 👇 NUEVO */}
-                <td className="p-2 text-gray-600">
-                  {p.category || "-"}
-                </td>
+                  <td className="p-2 font-medium text-dark">
+                    {p.name}
+                  </td>
 
-                <td className="p-2">{p.variant}</td>
+                  <td className="p-2 text-gray-600 hidden md:table-cell">
+                    {p.category || "-"}
+                  </td>
 
-                <td className="p-2">${p.costPrice}</td>
+                  <td className="p-2 text-gray-700 hidden md:table-cell">
+                    {p.variant || "-"}
+                  </td>
 
-                <td className="p-2 text-primary font-bold">
-                  ${p.salePrice}
-                </td>
+                  <td className="p-2 hidden md:table-cell">
+                    ${p.costPrice}
+                  </td>
 
-                <td className="p-2 text-green-600">
-                  ${gain}
-                </td>
+                  <td className="p-2 font-bold text-green-700">
+                    ${p.salePrice}
+                  </td>
 
-                <td className="p-2">{p.stock}</td>
+                  <td className="p-2 text-green-600 hidden md:table-cell">
+                    ${gain}
+                  </td>
 
-                <td className="p-2 space-x-2">
-                  <button
-                    onClick={() => onEdit(p)}
-                    className="text-blue-600"
-                  >
-                    Editar
-                  </button>
+                  <td className="p-2 font-semibold">
+                    {p.stock === 0 ? (
+                      <span className="text-red-700 font-bold">0</span>
+                    ) : (
+                      <span className={p.stock <= 5 ? "text-red-600" : "text-dark"}>
+                        {p.stock}
+                      </span>
+                    )}
+                  </td>
 
-                  <button
-                    onClick={() => onDelete(p.id)}
-                    className="text-red-500"
-                  >
-                    Eliminar
-                  </button>
-                </td>
+                  <td className="p-2">
+                    <div className="flex flex-col gap-1 md:flex-row md:gap-2">
+                      <button
+                        onClick={() => onEdit(p)}
+                        className="text-left md:text-center text-dark font-medium hover:text-primaryHover"
+                      >
+                        Editar
+                      </button>
 
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+                      <button
+                        onClick={() => onDelete(p.id)}
+                        className="text-left md:text-center text-red-600 font-medium hover:text-red-700"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+
+                </tr>
+              )
+            })}
+          </tbody>
+
+        </table>
+      </div>
+
     </div>
   )
 }

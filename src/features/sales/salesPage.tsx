@@ -3,7 +3,6 @@ import { getProducts } from "../../services/productService";
 import {
   createSale,
   getSales,
-  
   clearSales,
   cancelSale,
 } from "../../services/salesService";
@@ -162,103 +161,113 @@ export default function SalesPage() {
 
   return (
     <div className="space-y-6">
-
-      <h2 className="text-xl font-bold">Ventas</h2>
-
       {/* FORM */}
-      <div className="bg-white p-4 rounded shadow space-y-3">
+      <div className="bg-white rounded shadow overflow-hidden">
+        <div className="bg-secondary px-4 py-3 border-b">
+          <h3 className="font-bold text-dark">Registrar venta</h3>
+        </div>
 
-        <select
-          className="border p-2 w-full"
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-        >
-          <option value="">Seleccionar producto</option>
-
-          {categories.map((cat) => (
-            <optgroup key={cat.id} label={cat.name}>
-              {products
-                .filter((p) => p.category === cat.name)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} | {p.variant} | Stock: {p.stock}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-        </select>
-
-        <input
-          type="number"
-          min={1}
-          className="border p-2 w-full"
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-        />
-
-        <select
-          className="border p-2 w-full"
-          value={saleType}
-          onChange={(e) => setSaleType(e.target.value)}
-        >
-          <option value="cash">Contado</option>
-          <option value="account">Cuenta corriente</option>
-        </select>
-
-        {saleType === "account" && (
+        <div className="p-4 space-y-3">
           <select
-            className="border p-2 w-full"
-            value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
+            className="border border-gray-300 p-2 w-full rounded"
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
           >
-            <option value="">Seleccionar cliente</option>
+            <option value="">Seleccionar producto</option>
 
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+            {categories.map((cat) => (
+              <optgroup key={cat.id} label={cat.name}>
+                {products
+                  .filter((p) => p.category === cat.name)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} | {p.variant} | Stock: {p.stock}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
           </select>
-        )}
 
-        <button
-          onClick={handleSale}
-          className="bg-black text-white p-2 w-full rounded"
-        >
-          Registrar venta
-        </button>
+          <input
+            type="number"
+            min={1}
+            className="border border-gray-300 p-2 w-full rounded"
+            value={quantity}
+            onChange={(e) => setQuantity(Number(e.target.value))}
+          />
+
+          <select
+            className="border border-gray-300 p-2 w-full rounded"
+            value={saleType}
+            onChange={(e) => setSaleType(e.target.value)}
+          >
+            <option value="cash">Contado</option>
+            <option value="account">Cuenta corriente</option>
+          </select>
+
+          {saleType === "account" && (
+            <select
+              className="border border-gray-300 p-2 w-full rounded"
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+            >
+              <option value="">Seleccionar cliente</option>
+
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={handleSale}
+            className="bg-primary text-dark font-semibold p-2 w-full rounded hover:bg-primaryHover transition"
+          >
+            Registrar venta
+          </button>
+        </div>
       </div>
 
       {/* RESUMEN */}
-      <div className="bg-white p-4 rounded shadow space-y-2">
-        <h3 className="font-bold">Resumen</h3>
+      <div className="bg-white rounded shadow overflow-hidden">
+        <div className="bg-secondary px-4 py-3 border-b">
+          <h3 className="font-bold text-dark">Resumen</h3>
+        </div>
 
-        <p className="text-lg font-bold text-green-600">
-          Hoy: ${getTodayTotal()}
-        </p>
+        <div className="p-4">
+          <p className="text-2xl font-bold text-green-700">
+            Hoy: ${getTodayTotal()}
+          </p>
+        </div>
       </div>
 
       {/* POR DÍA */}
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-bold mb-2">Ventas por día</h3>
+      <div className="bg-white rounded shadow overflow-hidden">
+        <div className="bg-secondary px-4 py-3 border-b">
+          <h3 className="font-bold text-dark">Ventas por día</h3>
+        </div>
 
-        {Object.entries(getTotalsByDay()).map(([date, total]) => (
-          <div key={date} className="flex justify-between border-b py-1">
-            <span>{date}</span>
-            <span className="font-bold">${total}</span>
-          </div>
-        ))}
+        <div className="p-4">
+          {Object.entries(getTotalsByDay()).map(([date, total]) => (
+            <div key={date} className="flex justify-between border-b py-2">
+              <span className="text-gray-700">{date}</span>
+
+              <span className="font-bold text-dark">${total}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* HISTORIAL */}
-      <div className="bg-white rounded shadow">
-
-        <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="font-bold">Historial de ventas</h3>
+      <div className="bg-white rounded shadow overflow-hidden">
+        <div className="bg-secondary px-4 py-3 border-b flex justify-between items-center">
+          <h3 className="font-bold text-dark">Historial de ventas</h3>
 
           <button
             onClick={handleClear}
-            className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+            className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
           >
             Limpiar todo
           </button>
@@ -278,25 +287,27 @@ export default function SalesPage() {
                 }`}
               >
                 <div>
-                  <p className="font-medium">{s.productName}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-dark">{s.productName}</p>
+
+                  <p className="text-sm text-gray-700">
                     Cantidad: {s.quantity}
                   </p>
-                  <p className="text-xs text-gray-400">
+
+                  <p className="text-xs text-gray-600">
                     {formatDate(s.createdAt)}
                   </p>
                 </div>
 
                 <div className="text-right space-y-2">
-                  <p className="font-bold text-green-600">${s.total}</p>
+                  <p className="font-bold text-green-700 text-lg">${s.total}</p>
 
                   <button
                     onClick={() => handleCancel(s.id)}
                     disabled={s.status === "cancelled"}
-                    className={`text-xs ${
+                    className={`text-xs font-medium ${
                       s.status === "cancelled"
                         ? "text-gray-400 cursor-not-allowed"
-                        : "text-red-500"
+                        : "text-red-500 hover:text-red-700"
                     }`}
                   >
                     {s.status === "cancelled" ? "Anulada" : "Anular"}
@@ -307,7 +318,6 @@ export default function SalesPage() {
           )}
         </div>
       </div>
-
     </div>
   );
 }

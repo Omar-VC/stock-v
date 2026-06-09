@@ -16,15 +16,27 @@ export default function CategoriesPage() {
   }, [])
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Categorías</h2>
+    <div className="space-y-6">
 
-      <CategoryForm onCreated={loadCategories} />
+  <div className="bg-white rounded shadow overflow-hidden">
 
-      <CategoryList
-        categories={categories}
-        onDeleted={loadCategories}
-      />
+    <div className="bg-secondary px-4 py-3 border-b">
+      <h2 className="font-bold text-dark">
+        Nueva categoría
+      </h2>
     </div>
+
+    <div className="p-4">
+      <CategoryForm onCreated={loadCategories} />
+    </div>
+
+  </div>
+
+  <CategoryList
+    categories={categories}
+    onDeleted={loadCategories}
+  />
+
+</div>
   )
 }
