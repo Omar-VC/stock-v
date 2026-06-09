@@ -15,49 +15,100 @@ import {
 const salesRef = collection(db, "sales");
 
 // CREAR VENTA
-export async function createSale(
-  productId: string,
-  quantity: number,
+export async function createSale({
+  items,
   saleType = "cash",
   customerId = "",
-) {
-  const productRef = doc(db, "products", productId);
-  const productSnap = await getDoc(productRef);
-
-  if (!productSnap.exists()) {
-    throw new Error("Producto no existe");
+}: {
+  items: {
+    product: any;
+    quantity: number;
+  }[];
+  saleType?: string;
+  customerId?: string;
+}) {
+  if (!items || items.length === 0) {
+    throw new Error("Carrito vacío");
   }
 
-  const product = productSnap.data();
+  let total = 0;
 
-  const stock = Number(product.stock ?? 0);
-  const price = Number(product.salePrice ?? product.price ?? 0);
-  const qty = Number(quantity);
+  // 1) Validar stock y descontar por cada item
+  for (const item of items) {
+    const productRef = doc(db, "products", item.product.id);
+    const productSnap = await getDoc(productRef);
 
-  if (stock < qty) {
-    throw new Error("Stock insuficiente");
+    if (!productSnap.exists()) {
+      throw new Error(`Producto no existe: ${item.product.name}`);
+    }
+
+    const product = productSnap.data();
+    const stock = Number(product.stock ?? 0);
+    const qty = Number(item.quantity);
+    const price = Number(product.salePrice ?? product.price ?? 0);
+
+    if (stock < qty) {
+      throw new Error(`Stock insuficiente para ${product.name}`);
+    }
+
+    total += price * qty;
+
+    await updateDoc(productRef, {
+      stock: stock - qty,
+    });
   }
 
-  const total = price * qty;
+  // 2) Crear venta única
+  const saleData = {
+    items: items.map((i) => ({
+      productId: i.product.id,
+      productName: i.product.name,
+      quantity: i.quantity,
+      price: i.product.salePrice ?? i.product.price ?? 0,
+    })),
 
-  await addDoc(salesRef, {
-    productId,
-    productName: product.name,
-    quantity: qty,
-    salePrice: price,
     total,
-
     saleType,
-    customerId,
+    customerId: saleType === "account" ? customerId : "",
 
     status: "active",
-
     createdAt: Timestamp.now(),
-  });
+  };
 
-  await updateDoc(productRef, {
-    stock: stock - qty,
-  });
+  const saleDoc = await addDoc(salesRef, saleData);
+
+  // 3) Cuenta corriente (SOLO UNA VEZ)
+  if (saleType === "account") {
+    if (!customerId) {
+      throw new Error("Cliente requerido para cuenta corriente");
+    }
+
+    const customerRef = doc(db, "customers", customerId);
+    const customerSnap = await getDoc(customerRef);
+
+    if (!customerSnap.exists()) {
+      throw new Error("Cliente no existe");
+    }
+
+    const customer = customerSnap.data();
+
+    const newBalance = Number(customer.balance ?? 0) + total;
+
+    await updateDoc(customerRef, {
+      balance: newBalance,
+    });
+
+    // movimiento único (no por producto)
+    await addDoc(collection(db, "customerMovements"), {
+      customerId,
+      type: "debt",
+      description: `Venta #${saleDoc.id}`,
+      amount: total,
+      createdAt: Timestamp.now(),
+    });
+  }
+
+  return saleDoc.id;
 }
 
 // OBTENER VENTAS (ordenadas por fecha)
@@ -99,20 +150,26 @@ export async function cancelSale(saleId: string) {
     throw new Error("La venta ya está anulada");
   }
 
-  // 1. Revertir stock
-  const productRef = doc(db, "products", sale.productId);
-  const productSnap = await getDoc(productRef);
+  // 1) Revertir stock por cada item
+  if (sale.items && Array.isArray(sale.items)) {
+    for (const item of sale.items) {
+      const productRef = doc(db, "products", item.productId);
+      const productSnap = await getDoc(productRef);
 
-  if (productSnap.exists()) {
-    const product = productSnap.data();
-    const newStock = Number(product.stock ?? 0) + sale.quantity;
+      if (productSnap.exists()) {
+        const product = productSnap.data();
 
-    await updateDoc(productRef, {
-      stock: newStock,
-    });
+        const newStock =
+          Number(product.stock ?? 0) + Number(item.quantity);
+
+        await updateDoc(productRef, {
+          stock: newStock,
+        });
+      }
+    }
   }
 
-  // 2. Si fue cuenta corriente, revertir deuda
+  // 2) Revertir cuenta corriente (UNA SOLA VEZ)
   if (sale.saleType === "account" && sale.customerId) {
     const customerRef = doc(db, "customers", sale.customerId);
     const customerSnap = await getDoc(customerRef);
@@ -121,24 +178,24 @@ export async function cancelSale(saleId: string) {
       const customer = customerSnap.data();
 
       const newBalance =
-        Number(customer.balance ?? 0) - sale.total;
+        Number(customer.balance ?? 0) - Number(sale.total);
 
       await updateDoc(customerRef, {
         balance: newBalance,
       });
 
-      // opcional: registrar movimiento de anulación
+      // movimiento de reversa
       await addDoc(collection(db, "customerMovements"), {
         customerId: sale.customerId,
         type: "reversal",
-        description: `Anulación venta ${sale.productName}`,
+        description: `Anulación venta ${saleId}`,
         amount: sale.total,
-        createdAt: Date.now(),
+        createdAt: Timestamp.now(),
       });
     }
   }
 
-  // 3. Marcar venta como anulada
+  // 3) Marcar venta como anulada
   await updateDoc(saleRef, {
     status: "cancelled",
   });
