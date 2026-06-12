@@ -57,10 +57,6 @@ export async function createSale({
     });
 
     total += item.price * qty;
-
-    await updateDoc(productRef, {
-      stock: stock - qty,
-    });
   }
 
   // 2) Crear venta única
@@ -103,11 +99,13 @@ export async function createSale({
       balance: newBalance,
     });
 
-    // movimiento único (no por producto)
+    // movimiento único
     await addDoc(collection(db, "customerMovements"), {
       customerId,
       type: "debt",
-      description: `Venta a ${customerSnap.data().name}`,
+      description: items
+        .map((i) => `${i.productName} x${i.quantity}`)
+        .join(" | "),
       amount: total,
       createdAt: Timestamp.now(),
     });
@@ -191,7 +189,9 @@ export async function cancelSale(saleId: string) {
       await addDoc(collection(db, "customerMovements"), {
         customerId: sale.customerId,
         type: "reversal",
-        description: `Anulación venta ${saleId}`,
+        description: sale.items
+          ?.map((i: any) => `${i.productName} x${i.quantity}`)
+          .join(" | "),
         amount: sale.total,
         createdAt: Timestamp.now(),
       });
@@ -204,7 +204,6 @@ export async function cancelSale(saleId: string) {
   });
 }
 
-
 //backup de ventas
 export async function backupSales() {
   const snap = await getDocs(salesRef);
@@ -216,7 +215,7 @@ export async function backupSales() {
       ...d.data(),
       originalId: d.id,
       backupDate: Timestamp.now(),
-    })
+    }),
   );
 
   await Promise.all(copies);

@@ -174,7 +174,13 @@ export default function CustomerDetailPage() {
                 <p className="font-medium">{m.description}</p>
 
                 <p className="text-sm text-gray-500">
-                  {m.type === "debt" ? "Deuda" : "Pago"}
+                  {m.type === "debt"
+                    ? "Deuda"
+                    : m.type === "payment"
+                      ? "Pago"
+                      : m.type === "reversal"
+                        ? "Anulación"
+                        : "Movimiento"}
                 </p>
 
                 <p className="font-bold">${m.amount}</p>
