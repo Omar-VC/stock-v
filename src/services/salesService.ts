@@ -21,8 +21,10 @@ export async function createSale({
   customerId = "",
 }: {
   items: {
-    product: any;
+    productId: string;
+    productName: string;
     quantity: number;
+    price: number;
   }[];
   saleType?: string;
   customerId?: string;
@@ -35,23 +37,26 @@ export async function createSale({
 
   // 1) Validar stock y descontar por cada item
   for (const item of items) {
-    const productRef = doc(db, "products", item.product.id);
+    const productRef = doc(db, "products", item.productId);
     const productSnap = await getDoc(productRef);
 
     if (!productSnap.exists()) {
-      throw new Error(`Producto no existe: ${item.product.name}`);
+      throw new Error(`Producto no existe: ${item.productName}`);
     }
 
     const product = productSnap.data();
     const stock = Number(product.stock ?? 0);
     const qty = Number(item.quantity);
-    const price = Number(product.salePrice ?? product.price ?? 0);
 
     if (stock < qty) {
-      throw new Error(`Stock insuficiente para ${product.name}`);
+      throw new Error(`Stock insuficiente para ${item.productName}`);
     }
 
-    total += price * qty;
+    await updateDoc(productRef, {
+      stock: stock - qty,
+    });
+
+    total += item.price * qty;
 
     await updateDoc(productRef, {
       stock: stock - qty,
@@ -61,10 +66,10 @@ export async function createSale({
   // 2) Crear venta única
   const saleData = {
     items: items.map((i) => ({
-      productId: i.product.id,
-      productName: i.product.name,
+      productId: i.productId,
+      productName: i.productName,
       quantity: i.quantity,
-      price: i.product.salePrice ?? i.product.price ?? 0,
+      price: i.price,
     })),
 
     total,
@@ -102,7 +107,7 @@ export async function createSale({
     await addDoc(collection(db, "customerMovements"), {
       customerId,
       type: "debt",
-      description: `Venta #${saleDoc.id}`,
+      description: `Venta a ${customerSnap.data().name}`,
       amount: total,
       createdAt: Timestamp.now(),
     });
@@ -159,8 +164,7 @@ export async function cancelSale(saleId: string) {
       if (productSnap.exists()) {
         const product = productSnap.data();
 
-        const newStock =
-          Number(product.stock ?? 0) + Number(item.quantity);
+        const newStock = Number(product.stock ?? 0) + Number(item.quantity);
 
         await updateDoc(productRef, {
           stock: newStock,
@@ -177,8 +181,7 @@ export async function cancelSale(saleId: string) {
     if (customerSnap.exists()) {
       const customer = customerSnap.data();
 
-      const newBalance =
-        Number(customer.balance ?? 0) - Number(sale.total);
+      const newBalance = Number(customer.balance ?? 0) - Number(sale.total);
 
       await updateDoc(customerRef, {
         balance: newBalance,
@@ -199,4 +202,22 @@ export async function cancelSale(saleId: string) {
   await updateDoc(saleRef, {
     status: "cancelled",
   });
+}
+
+
+//backup de ventas
+export async function backupSales() {
+  const snap = await getDocs(salesRef);
+
+  const backupRef = collection(db, "sales_backup");
+
+  const copies = snap.docs.map((d) =>
+    addDoc(backupRef, {
+      ...d.data(),
+      originalId: d.id,
+      backupDate: Timestamp.now(),
+    })
+  );
+
+  await Promise.all(copies);
 }

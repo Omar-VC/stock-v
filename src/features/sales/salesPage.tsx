@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { getProducts } from "../../services/productService";
-import { createSale, getSales } from "../../services/salesService";
+import {
+  createSale,
+  getSales,
+  cancelSale,
+  clearSales,
+} from "../../services/salesService";
 import { getCategories } from "../../services/categoryService";
 import type { Product } from "../../types/product";
 import { getCustomers } from "../../services/customerService";
@@ -36,6 +41,38 @@ export default function SalesPage() {
   const loadCustomers = async () => setCustomers(await getCustomers());
   const loadSales = async () => setSales(await getSales());
 
+  const normalizeDate = (date: any) => {
+    if (!date) return null;
+
+    if (date?.toDate) return date.toDate();
+    return new Date(date);
+  };
+
+  const isToday = (date: any) => {
+    const d = normalizeDate(date);
+    if (!d) return false;
+
+    return d.toDateString() === new Date().toDateString();
+  };
+
+  //CAJA DEL DIA
+  const cashToday = sales.reduce((acc, s) => {
+    if (s.status === "cancelled") return acc;
+    if (s.saleType !== "cash") return acc;
+    if (!isToday(s.createdAt)) return acc;
+
+    return acc + (s.total || 0);
+  }, 0);
+
+  //CUENTA CORRIENTE DEL DIA
+  const accountToday = sales.reduce((acc, s) => {
+    if (s.status === "cancelled") return acc;
+    if (s.saleType !== "account") return acc;
+    if (!isToday(s.createdAt)) return acc;
+
+    return acc + (s.total || 0);
+  }, 0);
+
   // 👉 AGREGAR AL CARRITO
   const addToCart = () => {
     if (!selectedId) return;
@@ -66,12 +103,25 @@ export default function SalesPage() {
     setCart((prev) => prev.filter((i) => i.product.id !== productId));
   };
 
+  const getSaleTypeLabel = (type?: string) => {
+    switch (type) {
+      case "cash":
+        return "Contado";
+      case "account":
+        return "Cuenta corriente";
+      default:
+        return "Sin definir";
+    }
+  };
+
   // 👉 TOTAL
   const getTotal = () =>
     cart.reduce(
       (acc, item) => acc + (item.product.salePrice || 0) * item.quantity,
       0,
     );
+
+  const totalToday = cashToday + accountToday;
 
   // 👉 VENTA FINAL
   const handleSale = async () => {
@@ -84,13 +134,42 @@ export default function SalesPage() {
 
     try {
       await createSale({
-        items: cart,
+        items: cart.map((i) => ({
+          productId: i.product.id,
+          productName: i.product.name,
+          quantity: i.quantity,
+          price: i.product.salePrice || 0,
+        })),
         saleType,
         customerId,
       });
 
       setCart([]);
       setCustomerId("");
+      loadSales();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  //CANCELAR VENTA
+  const handleCancel = async (id: string) => {
+    if (!confirm("¿Anular esta venta?")) return;
+
+    try {
+      await cancelSale(id);
+      loadSales();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  //LIMPIAR HISTORIAL DE VENTAS
+  const handleClearSales = async () => {
+    if (!confirm("¿Borrar TODO el historial de ventas?")) return;
+
+    try {
+      await clearSales();
       loadSales();
     } catch (err: any) {
       alert(err.message);
@@ -201,10 +280,29 @@ export default function SalesPage() {
           Finalizar venta
         </button>
       </div>
+
+      <div className="bg-white p-4 rounded shadow space-y-2">
+        <h3 className="font-bold">Caja del día</h3>
+
+        <p className="text-green-600 font-bold">Efectivo: ${cashToday}</p>
+
+        <p className="text-orange-600 font-bold">
+          Cuenta corriente: ${accountToday}
+        </p>
+
+        <p className="border-t pt-2 font-bold">Total: ${totalToday}</p>
+      </div>
+
       {/* HISTORIAL */}
       <div className="bg-white rounded shadow">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b flex justify-between items-center">
           <h3 className="font-bold">Historial de ventas</h3>
+          <button
+            onClick={handleClearSales}
+            className="text-xs bg-red-600 text-white px-3 py-1 rounded"
+          >
+            Limpiar
+          </button>
         </div>
 
         <div className="divide-y">
@@ -219,7 +317,9 @@ export default function SalesPage() {
               return (
                 <div
                   key={s.id}
-                  className="p-4 flex justify-between items-center"
+                  className={`p-4 flex justify-between items-center ${
+                    s.status === "cancelled" ? "opacity-50 bg-red-50" : ""
+                  }`}
                 >
                   <div>
                     {isCarrito ? (
@@ -248,8 +348,21 @@ export default function SalesPage() {
                     <p className="font-bold text-green-600">${s.total}</p>
 
                     <p className="text-xs text-gray-400">
-                      {s.saleType === "cash" ? "Contado" : "Cuenta corriente"}
+                      {getSaleTypeLabel(s.saleType)}
                     </p>
+                    {s.status === "cancelled" && (
+                      <p className="text-xs font-bold text-red-600">
+                        VENTA ANULADA
+                      </p>
+                    )}
+                    {s.status !== "cancelled" && (
+                      <button
+                        onClick={() => handleCancel(s.id)}
+                        className="text-red-500 text-sm"
+                      >
+                        Anular
+                      </button>
+                    )}
                   </div>
                 </div>
               );
