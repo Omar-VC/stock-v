@@ -154,6 +154,31 @@ export default function SalesPage() {
     }
   });
 
+  // AGREGA CALCULOS DE VENTAS HECHAS SEGUN FILTRADO
+  const activeSales = filteredSales.filter(
+    (sale) => sale.status !== "cancelled",
+  );
+
+  const cancelledSales = filteredSales.filter(
+    (sale) => sale.status === "cancelled",
+  );
+
+  const salesCount = activeSales.length;
+
+  const cancelledCount = cancelledSales.length;
+
+  const filteredTotal = activeSales.reduce(
+    (acc, sale) => acc + (sale.total || 0),
+    0,
+  );
+
+  const cancelledTotal = cancelledSales.reduce(
+    (acc, sale) => acc + (sale.total || 0),
+    0,
+  );
+
+  const averageSale = salesCount > 0 ? filteredTotal / salesCount : 0;
+
   // 👉 VENTA FINAL
   const handleSale = async () => {
     if (cart.length === 0) return;
@@ -344,6 +369,24 @@ export default function SalesPage() {
           >
             Limpiar
           </button>
+        </div>
+
+        <div className="bg-gray-50 border rounded p-3 m-4 space-y-1">
+          <h4 className="font-semibold">Resumen</h4>
+
+          <p>Ventas activas: {salesCount}</p>
+
+          <p className="text-red-500">Ventas anuladas: {cancelledCount}</p>
+
+          <p className="font-bold text-green-600">
+            Total vendido: ${filteredTotal.toFixed(2)}
+          </p>
+
+          <p className="font-bold text-red-500">
+            Importe anulado: ${cancelledTotal.toFixed(2)}
+          </p>
+
+          <p>Promedio por venta: ${averageSale.toFixed(2)}</p>
         </div>
 
         <div className="divide-y">
