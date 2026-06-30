@@ -28,6 +28,7 @@ export default function SalesPage() {
 
   const [saleType, setSaleType] = useState("cash");
   const [customerId, setCustomerId] = useState("");
+  const [historyFilter, setHistoryFilter] = useState("all");
 
   useEffect(() => {
     loadProducts();
@@ -122,6 +123,36 @@ export default function SalesPage() {
     );
 
   const totalToday = cashToday + accountToday;
+
+  // CREAR VENTAS FILTRADAS
+
+  const filteredSales = sales.filter((sale) => {
+    const date = normalizeDate(sale.createdAt);
+
+    if (!date) return false;
+
+    const now = new Date();
+
+    switch (historyFilter) {
+      case "today":
+        return date.toDateString() === now.toDateString();
+
+      case "week": {
+        const start = new Date(now);
+        start.setDate(now.getDate() - 7);
+        return date >= start;
+      }
+
+      case "month":
+        return (
+          date.getMonth() === now.getMonth() &&
+          date.getFullYear() === now.getFullYear()
+        );
+
+      default:
+        return true;
+    }
+  });
 
   // 👉 VENTA FINAL
   const handleSale = async () => {
@@ -297,6 +328,16 @@ export default function SalesPage() {
       <div className="bg-white rounded shadow">
         <div className="p-4 border-b flex justify-between items-center">
           <h3 className="font-bold">Historial de ventas</h3>
+          <select
+            className="mt-3 border p-2 rounded"
+            value={historyFilter}
+            onChange={(e) => setHistoryFilter(e.target.value)}
+          >
+            <option value="all">Todas</option>
+            <option value="today">Hoy</option>
+            <option value="week">Últimos 7 días</option>
+            <option value="month">Este mes</option>
+          </select>
           <button
             onClick={handleClearSales}
             className="text-xs bg-red-600 text-white px-3 py-1 rounded"
@@ -306,12 +347,12 @@ export default function SalesPage() {
         </div>
 
         <div className="divide-y">
-          {sales.length === 0 ? (
+          {filteredSales.length === 0 ? (
             <p className="p-4 text-gray-500 text-center">
               No hay ventas registradas
             </p>
           ) : (
-            sales.map((s) => {
+            filteredSales.map((s) => {
               const isCarrito = Array.isArray(s.items);
 
               return (
