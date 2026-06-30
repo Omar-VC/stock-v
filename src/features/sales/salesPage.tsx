@@ -371,22 +371,47 @@ export default function SalesPage() {
           </button>
         </div>
 
-        <div className="bg-gray-50 border rounded p-3 m-4 space-y-1">
-          <h4 className="font-semibold">Resumen</h4>
+        <div className="mt-4 mb-4 space-y-4">
+          <h4 className="text-sm text-gray-500 font-semibold">
+            Resumen del período
+          </h4>
 
-          <p>Ventas activas: {salesCount}</p>
+          {/* TARJETAS SUPERIORES */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-white border rounded-lg p-4 shadow-sm">
+              <p className="text-sm text-gray-500">Ventas</p>
+              <p className="text-2xl font-bold">{salesCount}</p>
+            </div>
 
-          <p className="text-red-500">Ventas anuladas: {cancelledCount}</p>
+            <div className="bg-white border rounded-lg p-4 shadow-sm">
+              <p className="text-sm text-red-500">Anuladas</p>
+              <p className="text-2xl font-bold text-red-600">
+                {cancelledCount}
+              </p>
+            </div>
 
-          <p className="font-bold text-green-600">
-            Total vendido: ${filteredTotal.toFixed(2)}
-          </p>
+            <div className="bg-white border rounded-lg p-4 shadow-sm">
+              <p className="text-sm text-blue-500">Promedio</p>
+              <p className="text-2xl font-bold">${averageSale.toFixed(2)}</p>
+            </div>
+          </div>
 
-          <p className="font-bold text-red-500">
-            Importe anulado: ${cancelledTotal.toFixed(2)}
-          </p>
+          {/* TARJETAS INFERIORES */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="bg-white border rounded-lg p-4 shadow-sm">
+              <p className="text-sm text-green-500">Total vendido</p>
+              <p className="text-2xl font-bold text-green-600">
+                ${filteredTotal.toFixed(2)}
+              </p>
+            </div>
 
-          <p>Promedio por venta: ${averageSale.toFixed(2)}</p>
+            <div className="bg-white border rounded-lg p-4 shadow-sm">
+              <p className="text-sm text-red-500">Importe anulado</p>
+              <p className="text-2xl font-bold text-red-600">
+                ${cancelledTotal.toFixed(2)}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="divide-y">
